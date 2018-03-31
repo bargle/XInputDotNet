@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Windows.Forms;
 using XInputDotNetPure;
 using System.Drawing;
+using System.Runtime.InteropServices;
 
 namespace XInputReporter
 {
@@ -12,6 +13,11 @@ namespace XInputReporter
         private Control[] controllerControls;
         private Control[] stickControls;
         private Point[] stickControlPositions;
+		float m_x = 0.0f;
+		float m_y = 0.0f;
+
+		[DllImport("user32.dll")]
+        public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, uint dwExtraInfo);
 
         public MainForm()
         {
@@ -39,7 +45,11 @@ namespace XInputReporter
             {
                 if (reporterState.Poll())
                 {
-                    Invoke(new Action(UpdateState));
+					try
+					{ 
+						Invoke(new Action(UpdateState));
+					}
+					catch(Exception) { }
                 }
             }
         }
@@ -122,6 +132,87 @@ namespace XInputReporter
 
             PositionStickControl(stickControls[0], stickControlPositions[0], reporterState.LastActiveState.ThumbSticks.Left);
             PositionStickControl(stickControls[1], stickControlPositions[1], reporterState.LastActiveState.ThumbSticks.Right);
+
+			if ( m_x != reporterState.LastActiveState.ThumbSticks.Left.X )
+			{
+				// A
+				if ( m_x < -0.24f ) //was left KB_DN
+				{
+					if ( reporterState.LastActiveState.ThumbSticks.Left.X > -0.24f ) // is now KB_UP
+					{
+						keybd_event( 0x41, 0, 0x0002, 0);
+					}
+				}
+
+				if ( m_x > -0.24f ) //was left KB_UP
+				{
+					if ( reporterState.LastActiveState.ThumbSticks.Left.X < -0.24f ) // is now KB_DN
+					{
+						keybd_event( 0x41, 0, 0, 0);
+					}
+				}
+
+				// D
+				if ( m_x > 0.24f ) //was left KB_DN
+				{
+					if ( reporterState.LastActiveState.ThumbSticks.Left.X < 0.24f ) // is now KB_UP
+					{
+						keybd_event( 0x44, 0, 0x0002, 0);
+					}
+				}
+
+				if ( m_x < 0.24f ) //was left KB_UP
+				{
+					if ( reporterState.LastActiveState.ThumbSticks.Left.X > 0.24f ) // is now KB_DN
+					{
+						keybd_event( 0x44, 0, 0, 0);
+					}
+				}
+
+			}
+
+			if ( m_y != reporterState.LastActiveState.ThumbSticks.Left.Y )
+			{ 
+
+				// S
+				if ( m_y < -0.24f ) //was down KB_DN
+				{
+					if ( reporterState.LastActiveState.ThumbSticks.Left.Y > -0.24f ) // is now KB_UP
+					{
+						keybd_event( 0x53, 0, 0x0002, 0);
+					}
+				}
+
+				if ( m_y > -0.24f ) //was down KB_UP
+				{
+					if ( reporterState.LastActiveState.ThumbSticks.Left.Y < -0.24f ) // is now KB_DN
+					{
+						keybd_event( 0x53, 0, 0, 0);
+					}
+				}
+
+				// W
+				if ( m_y > 0.24f ) //was left KB_DN
+				{
+					if ( reporterState.LastActiveState.ThumbSticks.Left.Y < 0.24f ) // is now KB_UP
+					{
+						keybd_event( 0x57, 0, 0x0002, 0);
+					}
+				}
+
+				if ( m_y < 0.24f ) //was left KB_UP
+				{
+					if ( reporterState.LastActiveState.ThumbSticks.Left.Y > 0.24f ) // is now KB_DN
+					{
+						keybd_event( 0x57, 0, 0, 0);
+					}
+				}
+
+			}
+
+			m_x = reporterState.LastActiveState.ThumbSticks.Left.X;
+			m_y = reporterState.LastActiveState.ThumbSticks.Left.Y;
+
         }
 
         private void checkLink_CheckedChanged(object sender, EventArgs e)
@@ -147,5 +238,9 @@ namespace XInputReporter
             checkLink.Checked = !checkLink.Checked;
             timerBack.Stop();
         }
-    }
+
+		private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+		{
+		}
+	}
 }
